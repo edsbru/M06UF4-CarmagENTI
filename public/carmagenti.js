@@ -15,11 +15,12 @@ let player_num = 0;
 let player1;
 let player2;
 
-//TODO
+//TODO "shootAngle" guarda el angulo del coche cuando se dispara la bala
 let shoot = false;
 let player1_shootAngle;
 let player2_shootAngle;
 const BULLET_SPEED = 2;
+
 // Creamos una variable donde guardar la ip del servidor al que vamos a hacer conexión
 const socket = new WebSocket('ws://192.168.1.58:8080');
 
@@ -44,13 +45,48 @@ socket.addEventListener('message', function(event){
 
 	// Si recibimos coordenadas
 	else if (data.x != undefined){
-	
+		
+		//Si el valor de player_num es 1 (somos el jugador 1)
+		if(player_num == 1){
+			//recibimos los datos del coche del p2 en  "player2"
+			player2.x = data.x;
+			player2.y = data.y;
+			player2.rotation = data.r;
+		}
+
 		//Si el valor de player_num es 2 (somos el jugador 2)
 		if(player_num == 2){
 			//recibimos los datos del coche del  p1 en  "player1"
 			player1.x = data.x;
 			player1.y = data.y;
 			player1.rotation = data.r;
+		}
+	}
+	
+	// Si recibimos coordenadas de bala
+	if(data.bx != undefined){
+
+		//Si el valor de player_num es 1 (somos el jugador 1)
+		if(player_num == 1){
+			
+			//Si la pos de la bala del player2 es diferente a la pos que recibimos del server, la bala esta en movimiento
+			if(bullet2.x != data.bx){
+				bullet2.setVisible(true);
+			}
+
+			bullet2.x = data.bx;
+			bullet2.y = data.by;
+		}
+
+		//Si el valor de player_num es 2 (somos el jugador 2)
+		if(player_num == 2){
+
+			if(bullet1.x != data.bx){
+				bullet1.setVisible(true);
+			}
+
+			bullet1.x = data.bx;
+			bullet1.y = data.by;
 		}
 	}
 });
@@ -75,7 +111,8 @@ const CAR_SPEED = 2;
 const CAR_ROTATION = 2;
 
 //Var que guarda el angulo del coche
-let player1_angle = 0; 
+let player1_angle = 0;
+let player2_angle = 0;
 
 //Variable que guarda el control por flechas(que se llaman cursores)
 let cursors;
@@ -104,10 +141,12 @@ function create ()
 	cursors = this.input.keyboard.createCursorKeys();
 	spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-	//bullet1.setVisible(false);
+	bullet1.setVisible(false);
 	bullet1.x = player1.x;
 	bullet1.y = player1.y;
 	bullet2.setVisible(false);
+	bullet2.x = player2.x;
+	bullet2.y = player2.y;
 }
 
 function update ()
@@ -149,7 +188,7 @@ function update ()
 			if(shoot == false){
 				shoot = true;
 				player1_shootAngle = player1_angle;
-				//bullet1.setVisible(true);
+				bullet1.setVisible(true);
 				bullet1.x = player1.x;
 				bullet1.y = player1.y;
 			}
@@ -160,7 +199,7 @@ function update ()
 		player1.rotation = player1_angle*Math.PI/180;
 
 		//Hacemos una variable que guarda las coordenadas del jugador1
-		let player_data = {
+		let player1_data = {
 			x: player1.x,
 			y: player1.y,
 			r: player1.rotation
@@ -172,8 +211,67 @@ function update ()
 		};
 
 		//Mandamos por el socket los datos del jugador1 en STRING
-		socket.send(JSON.stringify(player_data));
-		//socket.send(JSON.stringify(bullet1));
+		socket.send(JSON.stringify(player1_data));
+		socket.send(JSON.stringify(bullet1_data));
+
+	}
+
+	//Si player_num es 2
+	if (player_num == 2){
+
+		//Si la "flecha arriba" se pulsa, haz mates
+		if (cursors.up.isDown){
+			player2.y -= CAR_SPEED*Math.cos(player2_angle*Math.PI/180);
+			player2.x += CAR_SPEED*Math.sin(player2_angle*Math.PI/180);
+		}
+  
+		//Si la "flecha izquierda" se pulsa haz mates y gira el coche
+		if (cursors.left.isDown){
+			player2_angle -= CAR_ROTATION;
+  		}
+
+		//Si la "flecha derecha" se pulsa haz mates para girar el coche
+		else if (cursors.right.isDown){
+			player2_angle += CAR_ROTATION;
+		}
+
+		//TODO
+		if(shoot == true){
+			console.log(bullet2.x);
+			bullet2.y -= BULLET_SPEED*Math.cos(player2_shootAngle*Math.PI/180);
+			bullet2.x += BULLET_SPEED*Math.sin(player2_shootAngle*Math.PI/180);
+		}
+
+		spacebar.on('down', (key, event) => {
+
+			if(shoot == false){
+				shoot = true;
+				player2_shootAngle = player2_angle;
+				bullet2.setVisible(true);
+				bullet2.x = player2.x;
+				bullet2.y = player2.y;
+			}
+
+		});
+  
+		//rotation es la acción de girar y angle son los grados.
+		player2.rotation = player2_angle*Math.PI/180;
+
+		//Hacemos una variable que guarda las coordenadas del jugador1
+		let player2_data = {
+			x: player2.x,
+			y: player2.y,
+			r: player2.rotation
+		};
+
+		let bullet2_data = {
+			bx: bullet2.x,
+			by: bullet2.y
+		};
+
+		//Mandamos por el socket los datos del jugador1 en STRING
+		socket.send(JSON.stringify(player2_data));
+		socket.send(JSON.stringify(bullet2_data));
 
 	}
 }
