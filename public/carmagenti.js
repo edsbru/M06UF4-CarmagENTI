@@ -97,6 +97,12 @@ const config = {
 	type: Phaser.AUTO,
 	width: 800,
 	height: 600,
+	physics: {
+		default: "arcade",
+		arcade: {
+			debug: true
+		}
+	},
 	scene: {
 		preload: preload,
 		create: create,
@@ -134,12 +140,13 @@ function create ()
 {
 	//CREAMOS/INICIALIZAMOS los coches y el objeto que registra los inputs.
 	background = this.add.image(400, 300, 'background');
-	player1 = this.add.image(400, 300, 'car1');
-	player2 = this.add.image(500, 300, 'car2');
-	bullet1 = this.add.image(300, 300, 'bullet1');
-	bullet2 = this.add.image(300, 350, 'bullet2');
+	player1 = this.physics.add.sprite(400, 300, 'car1');
+	player2 = this.physics.add.sprite(500, 300, 'car2');
+	bullet1 = this.physics.add.sprite(300, 300, 'bullet1');
+	bullet2 = this.physics.add.sprite(300, 350, 'bullet2');
 	cursors = this.input.keyboard.createCursorKeys();
 	spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
 
 	bullet1.setVisible(false);
 	bullet1.x = player1.x;
@@ -147,6 +154,18 @@ function create ()
 	bullet2.setVisible(false);
 	bullet2.x = player2.x;
 	bullet2.y = player2.y;
+
+	//Colisiones
+	this.physics.add.collider(player1, bullet2, function (player1, bullet2){
+		player1.x = 0;
+		player1.y = 0;
+	});
+
+	this.physics.add.collider(player2, bullet1, function (player2, bullet1){
+		player2.x = 0;
+		player2.y = 0;
+	});
+
 }
 
 function update ()
