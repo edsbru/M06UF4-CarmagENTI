@@ -15,8 +15,13 @@ let player_num = 0;
 let player1;
 let player2;
 
+//TODO
+let shoot = false;
+let player1_shootAngle;
+let player2_shootAngle;
+const BULLET_SPEED = 2;
 // Creamos una variable donde guardar la ip del servidor al que vamos a hacer conexión
-const socket = new WebSocket('ws://10.40.1.132:8080');
+const socket = new WebSocket('ws://192.168.1.58:8080');
 
 //Abrimos un listener que espera a que se abra la conexión con un cliente y mete los datos en function(event)
 socket.addEventListener('open', function(event){
@@ -27,7 +32,7 @@ socket.addEventListener('open', function(event){
 socket.addEventListener('message', function(event){
 	console.log('Server: ', event.data);
 
-	//Hacemos una variable data que parsea a JavaScript el texto recivido por 'message'
+	//Hacemos una variable data que parsea a JavaScript el texto recibido por 'message'
 	let data = JSON.parse(event.data);
 
 	//Si data.player_num tiene valor (diferente de undefined) significa que nos envia nuestro numero de jugador.
@@ -40,7 +45,7 @@ socket.addEventListener('message', function(event){
 	// Si recibimos coordenadas
 	else if (data.x != undefined){
 	
-	//Si el valor de player_num es 2 (somos el jugador 2)
+		//Si el valor de player_num es 2 (somos el jugador 2)
 		if(player_num == 2){
 			//recibimos los datos del coche del  p1 en  "player1"
 			player1.x = data.x;
@@ -99,7 +104,9 @@ function create ()
 	cursors = this.input.keyboard.createCursorKeys();
 	spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-	bullet1.setVisible(false);
+	//bullet1.setVisible(false);
+	bullet1.x = player1.x;
+	bullet1.y = player1.y;
 	bullet2.setVisible(false);
 }
 
@@ -114,44 +121,59 @@ function update ()
 	//Si player_num es 1
 	if (player_num == 1){
 
-	//Si la "flecha arriba" se pulsa, haz mates
-	if (cursors.up.isDown){
-		player1.y -= CAR_SPEED*Math.cos(player1_angle*Math.PI/180);
-		player1.x += CAR_SPEED*Math.sin(player1_angle*Math.PI/180);
-	}
+		//Si la "flecha arriba" se pulsa, haz mates
+		if (cursors.up.isDown){
+			player1.y -= CAR_SPEED*Math.cos(player1_angle*Math.PI/180);
+			player1.x += CAR_SPEED*Math.sin(player1_angle*Math.PI/180);
+		}
   
-	//Si la "flecha izquierda" se pulsa haz mates y gira el coche
-	if (cursors.left.isDown){
-		player1_angle -= CAR_ROTATION;
-  	}
+		//Si la "flecha izquierda" se pulsa haz mates y gira el coche
+		if (cursors.left.isDown){
+			player1_angle -= CAR_ROTATION;
+  		}
 
-	//Si la "flecha derecha" se pulsa haz mates para girar el coche
-	else if (cursors.right.isDown){
-		player1_angle += CAR_ROTATION;
-	}
+		//Si la "flecha derecha" se pulsa haz mates para girar el coche
+		else if (cursors.right.isDown){
+			player1_angle += CAR_ROTATION;
+		}
 
-	spacebar.on('down', (key, event) => {
-		bullet1.x = player1.x;
-		bullet1.y = player1.y - 60;
-		bullet1.setVisible(true);
-	});
+		//TODO
+		if(shoot == true){
+			console.log(bullet1.x);
+			bullet1.y -= BULLET_SPEED*Math.cos(player1_shootAngle*Math.PI/180);
+			bullet1.x += BULLET_SPEED*Math.sin(player1_shootAngle*Math.PI/180);
+		}
+
+		spacebar.on('down', (key, event) => {
+
+			if(shoot == false){
+				shoot = true;
+				player1_shootAngle = player1_angle;
+				//bullet1.setVisible(true);
+				bullet1.x = player1.x;
+				bullet1.y = player1.y;
+			}
+
+		});
   
-	//rotation es la acción de girar y angle son los grados.
-	player1.rotation = player1_angle*Math.PI/180;
+		//rotation es la acción de girar y angle son los grados.
+		player1.rotation = player1_angle*Math.PI/180;
 
-	//Hacemos una variable que guarda las coordenadas del jugador1
-	let player_data = {
-		x: player1.x,
-		y: player1.y,
-		r: player1.rotation
-	};
+		//Hacemos una variable que guarda las coordenadas del jugador1
+		let player_data = {
+			x: player1.x,
+			y: player1.y,
+			r: player1.rotation
+		};
 
-	let bullet1_data = {
-		bx: bullet1.x,
-		by: bullet1.y
-	};
+		let bullet1_data = {
+			bx: bullet1.x,
+			by: bullet1.y
+		};
 
-	//Mandamos por el socket los datos del jugador1 en STRING
-	socket.send(JSON.stringify(player_data));
+		//Mandamos por el socket los datos del jugador1 en STRING
+		socket.send(JSON.stringify(player_data));
+		//socket.send(JSON.stringify(bullet1));
+
 	}
 }
