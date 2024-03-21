@@ -14,6 +14,7 @@ let player_num = 0;
 //Declaramos las variables de los jugadores.
 let player1;
 let player2;
+let playerWin;
 
 //TODO "shootAngle" guarda el angulo del coche cuando se dispara la bala
 let shoot = false;
@@ -25,71 +26,114 @@ const BULLET_SPEED = 2;
 const socket = new WebSocket('ws://192.168.1.58:8080');
 
 //Abrimos un listener que espera a que se abra la conexión con un cliente y mete los datos en function(event)
-socket.addEventListener('open', function(event){
+//socket.addEventListener('open', function(event){	
+//});
 
-});
-
+//RECIBIMOS DATA
 //Mandamos un mensaje diciendo "Server", para comprobar que nos llegan datos
 socket.addEventListener('message', function(event){
 	console.log('Server: ', event.data);
-
-	//Hacemos una variable data que parsea a JavaScript el texto recibido por 'message'
-	let data = JSON.parse(event.data);
-
-	//Si data.player_num tiene valor (diferente de undefined) significa que nos envia nuestro numero de jugador.
-	if(data.player_num != undefined){
-  		//Guardamos el numero del jugador que viene de los datos que hemos recibido
-		player_num = data.player_num;
-		console.log('Jugador num:', player_num);
-	}
-
-	// Si recibimos coordenadas
-	else if (data.x != undefined){
-		
-		//Si el valor de player_num es 1 (somos el jugador 1)
-		if(player_num == 1){
-			//recibimos los datos del coche del p2 en  "player2"
-			player2.x = data.x;
-			player2.y = data.y;
-			player2.rotation = data.r;
-		}
-
-		//Si el valor de player_num es 2 (somos el jugador 2)
-		if(player_num == 2){
-			//recibimos los datos del coche del  p1 en  "player1"
-			player1.x = data.x;
-			player1.y = data.y;
-			player1.rotation = data.r;
-		}
-	}
 	
-	// Si recibimos coordenadas de bala
-	if(data.bx != undefined){
-
-		//Si el valor de player_num es 1 (somos el jugador 1)
-		if(player_num == 1){
-			
-			//Si la pos de la bala del player2 es diferente a la pos que recibimos del server, la bala esta en movimiento
-			if(bullet2.x != data.bx){
-				bullet2.setVisible(true);
-			}
-
-			bullet2.x = data.bx;
-			bullet2.y = data.by;
-		}
-
-		//Si el valor de player_num es 2 (somos el jugador 2)
-		if(player_num == 2){
-
-			if(bullet1.x != data.bx){
-				bullet1.setVisible(true);
-			}
-
-			bullet1.x = data.bx;
-			bullet1.y = data.by;
-		}
+	if(event.data === "Player 1 Wins"){
+		console.log("HA GANADO EL JUGADOR 1");
+		winner.text = "Ha ganado el jugador 1";	
 	}
+
+	else if(event.data === "Player 2 Wins"){
+		console.log("HA GANADO EL JUGADOR 2");
+		winner.text = "Ha ganado el jugador 2";
+	}
+
+	else{
+
+		//Hacemos una variable data que parsea a JavaScript el texto recibido por 'message'
+		let data = JSON.parse(event.data);
+
+		//Si data.player_num tiene valor (diferente de undefined) significa que nos envia nuestro numero de jugador.
+		if(data.player_num != undefined){
+  			//Guardamos el numero del jugador que viene de los datos que hemos recibido
+			player_num = data.player_num;
+			console.log('Jugador num:', player_num);
+		}
+
+		// Si recibimos coordenadas
+		else if (data.x != undefined){
+			//Si el valor de player_num es 1 (somos el jugador 1)
+			if(player_num == 1){
+				//recibimos los datos del coche del p2 en  "player2"
+				player2.x = data.x;
+				player2.y = data.y;
+				player2.rotation = data.r;
+			}
+
+			//Si el valor de player_num es 2 (somos el jugador 2)
+			if(player_num == 2){
+				//recibimos los datos del coche del  p1 en  "player1"
+				player1.x = data.x;
+				player1.y = data.y;
+				player1.rotation = data.r;
+			}
+
+			if(player_num > 2 && data.p == 1){
+				player1.x = data.x;
+				player1.y = data.y;
+				player1.rotation =  data.r;
+			}
+			
+			if(player_num > 2 && data.p == 2){
+				player2.x = data.x;
+				player2.y = data.y;
+				player2.rotation =  data.r;
+			}
+
+		}
+	
+		// Si recibimos coordenadas de bala
+		if(data.bx != undefined){
+			//Si el valor de player_num es 1 (somos el jugador 1)
+			if(player_num == 1){
+
+				//Si la pos de la bala del player2 es diferente a la pos que recibimos del server, la bala esta en movimiento
+				if(bullet2.x != data.bx){
+					bullet2.setVisible(true);
+				}
+
+				bullet2.x = data.bx;
+				bullet2.y = data.by;
+			}
+
+			//Si el valor de player_num es 2 (somos el jugador 2)
+			if(player_num == 2){
+
+				if(bullet1.x != data.bx){
+					bullet1.setVisible(true);
+				}
+
+				bullet1.x = data.bx;
+				bullet1.y = data.by;
+			}
+
+			if(player_num > 2 && data.bp == 1){
+				if(bullet1.x != data.bx){
+					bullet1.setVisible(true);
+				}
+				bullet1.x = data.bx;
+				bullet1.y = data.by;
+			}
+			
+			if(player_num > 2 && data.bp == 2){
+				if(bullet2.x != data.bx){
+					bullet2.setVisible(true);
+				}
+				bullet2.x = data.bx;
+				bullet2.y = data.by;
+			}
+		}
+
+	}
+
 });
+
 
 //Cosas de phaser
 //Configuración de Phaser
@@ -134,36 +178,39 @@ function preload ()
 	this.load.image('car2', 'assets/PNG/Cars/car_blue_small_1.png');
 	this.load.image('bullet1', 'assets/PNG/Objects/barrel_red.png');
 	this.load.image('bullet2', 'assets/PNG/Objects/barrel_blue.png');
+
 }
 
 function create ()
 {
 	//CREAMOS/INICIALIZAMOS los coches y el objeto que registra los inputs.
 	background = this.add.image(400, 300, 'background');
+	winner = this.add.text(250, 250, " ", {fontSize: '30px',  color: '#F01B19'});
 	player1 = this.physics.add.sprite(400, 300, 'car1');
 	player2 = this.physics.add.sprite(500, 300, 'car2');
-	bullet1 = this.physics.add.sprite(300, 300, 'bullet1');
-	bullet2 = this.physics.add.sprite(300, 350, 'bullet2');
+	bullet1 = this.physics.add.sprite(-100, -100, 'bullet1');
+	bullet2 = this.physics.add.sprite(-100, -150, 'bullet2');
 	cursors = this.input.keyboard.createCursorKeys();
 	spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-
 	bullet1.setVisible(false);
-	bullet1.x = player1.x;
-	bullet1.y = player1.y;
 	bullet2.setVisible(false);
-	bullet2.x = player2.x;
-	bullet2.y = player2.y;
 
-	//Colisiones
+	//Se produce colisión 
 	this.physics.add.collider(player1, bullet2, function (player1, bullet2){
-		player1.x = 0;
-		player1.y = 0;
+		//player1.x = 0;
+		//player1.y = 0;
+		//player 2 gana	
+		socket.send("Player 2 Wins");	
+		
 	});
 
-	this.physics.add.collider(player2, bullet1, function (player2, bullet1){
-		player2.x = 0;
-		player2.y = 0;
+	this.physics.add.collider(player2, bullet1, function (player2, bullet1){ 
+		//player2.x = 0;
+		//player2.y = 0;
+		//player 1 gana
+		socket.send("Player 1 Wins");	
+		
 	});
 
 }
@@ -197,7 +244,7 @@ function update ()
 
 		//TODO
 		if(shoot == true){
-			console.log(bullet1.x);
+			//console.log(bullet1.x);
 			bullet1.y -= BULLET_SPEED*Math.cos(player1_shootAngle*Math.PI/180);
 			bullet1.x += BULLET_SPEED*Math.sin(player1_shootAngle*Math.PI/180);
 		}
@@ -221,14 +268,16 @@ function update ()
 		let player1_data = {
 			x: player1.x,
 			y: player1.y,
-			r: player1.rotation
+			r: player1.rotation,
+			p: 1
 		};
 
 		let bullet1_data = {
 			bx: bullet1.x,
-			by: bullet1.y
+			by: bullet1.y,
+			bp: 1
 		};
-
+		//ENVIAMOS DATA
 		//Mandamos por el socket los datos del jugador1 en STRING
 		socket.send(JSON.stringify(player1_data));
 		socket.send(JSON.stringify(bullet1_data));
@@ -254,9 +303,9 @@ function update ()
 			player2_angle += CAR_ROTATION;
 		}
 
-		//TODO
+		//Disparo
 		if(shoot == true){
-			console.log(bullet2.x);
+			//console.log(bullet2.x);
 			bullet2.y -= BULLET_SPEED*Math.cos(player2_shootAngle*Math.PI/180);
 			bullet2.x += BULLET_SPEED*Math.sin(player2_shootAngle*Math.PI/180);
 		}
@@ -280,17 +329,19 @@ function update ()
 		let player2_data = {
 			x: player2.x,
 			y: player2.y,
-			r: player2.rotation
+			r: player2.rotation,
+			p: 2
 		};
 
 		let bullet2_data = {
 			bx: bullet2.x,
-			by: bullet2.y
+			by: bullet2.y,
+			bp: 2
 		};
 
 		//Mandamos por el socket los datos del jugador1 en STRING
 		socket.send(JSON.stringify(player2_data));
 		socket.send(JSON.stringify(bullet2_data));
-
+		//socket.send("hola");
 	}
 }
